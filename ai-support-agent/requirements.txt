@@ -1,0 +1,11 @@
+pandas>=2.0
+numpy>=1.24
+scikit-learn>=1.3
+pydantic>=2.0
+PyYAML>=6.0
+pytest>=7.4
+
+# Optional, used automatically if present / if network + credentials allow:
+# sentence-transformers>=2.2   # richer embeddings for retrieval (falls back to TF-IDF if absent)
+# anthropic>=0.25              # for LLM-based intent/generation/judge (falls back to classical baseline if no API key)
+# kaggle>=1.6                  # for real dataset download

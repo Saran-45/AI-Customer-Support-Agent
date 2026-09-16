@@ -1,0 +1,161 @@
+# Intent taxonomy for StreamBoxHelp (synthetic brand, see DECISION_LOG.md).
+# Derived via: frequency analysis of keyword clusters + TF-IDF KMeans (k=13)
+# on the synthetic customer-message corpus, then manually reviewed/renamed
+# and merged where clusters were semantically duplicate. See reports/eda.md
+# section "Intent discovery" for the clustering run that produced these.
+
+intents:
+  - name: login_issue
+    description: >
+      Customer cannot log into their account (wrong password rejected,
+      account locked, "can't sign in" errors) but is NOT reporting that
+      the account itself was compromised by someone else.
+    positive_examples:
+      - "I keep getting logged out of the app every time I open it"
+      - "Your app won't let me sign in, keeps saying invalid credentials"
+    negative_examples:
+      - "Someone logged into my account from another country" # -> account_security
+      - "I forgot my password, how do I reset it" # -> password_reset
+    boundary_cases:
+      - "It says my account is locked, did someone try to break in?" # could be account_security if hacking suspected
+
+  - name: password_reset
+    description: >
+      Customer explicitly asks how to reset/change their password or
+      reports the reset flow (email link, SMS code) is broken.
+    positive_examples:
+      - "The password reset email never arrives"
+      - "How do I change my password on the app"
+    negative_examples:
+      - "I can't log in at all" # -> login_issue unless password reset is explicitly named
+    boundary_cases:
+      - "I reset my password 3 times and still can't log in" # touches both; label by dominant ask (login_issue)
+
+  - name: payment_failed
+    description: >
+      A payment attempt (new subscription, renewal, upgrade) did not go
+      through, or the customer was charged but did not receive the
+      corresponding service/benefit.
+    positive_examples:
+      - "My card was charged but my subscription still shows as inactive"
+      - "Payment keeps failing even though my card is fine"
+    negative_examples:
+      - "I was charged twice this month" # -> billing_overcharge
+    boundary_cases:
+      - "Paid for premium but still seeing ads" # payment_failed (benefit not applied)
+
+  - name: billing_overcharge
+    description: >
+      Customer reports being charged an incorrect amount, charged more
+      than once, or charged after cancellation.
+    positive_examples:
+      - "I was billed twice for the same month"
+      - "You charged me after I cancelled last week"
+    negative_examples:
+      - "My payment didn't go through" # -> payment_failed
+    boundary_cases:
+      - "Charged the annual price when I signed up for monthly"
+
+  - name: subscription_cancel
+    description: >
+      Customer wants to cancel, pause, or downgrade their subscription,
+      or is asking how to do so.
+    positive_examples:
+      - "How do I cancel my subscription"
+      - "Please cancel my plan, I don't want to be charged again"
+    negative_examples:
+      - "Cancel the charge you made, it's wrong" # -> billing_overcharge
+    boundary_cases:
+      - "I already cancelled but got charged anyway" # billing_overcharge (the ask is about the charge, not cancelling)
+
+  - name: refund_request
+    description: >
+      Customer explicitly asks for money back, a credit, or compensation.
+    positive_examples:
+      - "I want a refund for this month, the service didn't work at all"
+      - "Can I get my money back, I never used it"
+    negative_examples:
+      - "This is wrong, fix my bill" # billing_overcharge unless refund explicitly requested
+    boundary_cases:
+      - "I was overcharged, refund me the difference" # both billing_overcharge + refund_request; primary=refund_request
+
+  - name: app_crash
+    description: >
+      The application crashes, freezes, or fails to open/load on the
+      customer's device.
+    positive_examples:
+      - "The app crashes every time I try to open it on my phone"
+      - "It freezes on the loading screen"
+    negative_examples:
+      - "Video keeps buffering" # -> playback_buffering
+    boundary_cases:
+      - "App crashes whenever a video starts playing" # app_crash (crash is the primary symptom)
+
+  - name: playback_buffering
+    description: >
+      Video/audio plays but with quality problems: buffering, low
+      resolution, stuttering, audio/video sync issues. App itself is
+      running.
+    positive_examples:
+      - "Video keeps buffering even on good wifi"
+      - "Quality drops to 240p randomly during playback"
+    negative_examples:
+      - "App won't open at all" # -> app_crash
+    boundary_cases: []
+
+  - name: content_unavailable
+    description: >
+      Customer reports specific content missing, region-locked, removed,
+      or a "not available in your region" error, unrelated to app
+      functionality.
+    positive_examples:
+      - "Why was this show removed, I was in the middle of it"
+      - "It says not available in my country but I'm a paying subscriber"
+    negative_examples: []
+    boundary_cases: []
+
+  - name: account_security
+    description: >
+      Customer reports or suspects unauthorized account access, suspicious
+      activity, or a security/privacy concern about their account.
+    positive_examples:
+      - "Someone is using my account, I see devices I don't recognize"
+      - "My email was changed without my permission"
+    negative_examples:
+      - "I forgot my password" # -> password_reset
+    boundary_cases:
+      - "I think my account got hacked, can't log in anymore" # account_security (dominant concern is compromise)
+
+  - name: feature_request
+    description: >
+      Customer suggests a new feature or improvement; not reporting a
+      problem.
+    positive_examples:
+      - "You should add a way to download episodes for offline viewing"
+      - "Please add profiles for kids"
+    negative_examples: []
+    boundary_cases: []
+
+  - name: positive_feedback
+    description: >
+      Customer expresses satisfaction, thanks, or praise with no
+      outstanding issue or request.
+    positive_examples:
+      - "Just wanted to say the new app update is great, thanks!"
+      - "Loving the new recommendations feature"
+    negative_examples: []
+    boundary_cases:
+      - "Great app but please fix the buffering" # -> playback_buffering (has an actionable issue)
+
+  - name: general_complaint
+    description: >
+      A genuine dissatisfaction/complaint that does not fit any specific
+      category above (e.g. dissatisfaction with customer service itself,
+      vague "this app is terrible" messages with no specific symptom).
+      Used sparingly -- prefer a specific intent whenever the message
+      names a concrete symptom.
+    positive_examples:
+      - "Your customer support never responds, this is ridiculous"
+      - "Worst service I've ever used"
+    negative_examples: []
+    boundary_cases: []
